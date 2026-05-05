@@ -39,7 +39,7 @@ Sistema completo de controle de acesso utilizando:
 
 ## ESP32 do projeto
 
-![Arduino](Imagens/sistemadepresenca.png)
+![Arduino](imagens/sistemadepresenca.png)
 
 ## ▶️ Como executar o projeto
 
