@@ -6,8 +6,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class SistemaApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(SistemaApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(SistemaApplication.class, args);
+        System.out.println("Sistema iniciado com sucesso!");
+        System.out.println("Acesse: http://localhost:8080");
+    }
 
 }

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Controle de Presença</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+  <div class="container">
+
+
+    <div class="header">
+      <h1>Controle de Presença</h1>
+      <span id="hora"></span>
+    </div>
+
+
+    <div class="cards">
+
+      <div class="card">
+        <h2>Pessoas</h2>
+        <span id="pessoas">0</span>
+      </div>
+
+      <div class="card">
+        <h2>Limite</h2>
+        <span id="limite">0</span>
+      </div>
+
+      <div class="card">
+        <h2>Status</h2>
+        <span id="status">-</span>
+      </div>
+
+    </div>
+
+
+    <div class="progress-container">
+      <div class="progress-bar" id="barra"></div>
+    </div>
+
+
+    <div class="controls">
+      <input type="number" id="novoLimite" placeholder="Novo limite">
+      <button onclick="alterarLimite()">Alterar</button>
+      <button onclick="resetar()">Resetar</button>
+    </div>
+
+
+    <canvas id="grafico"></canvas>
+
+  </div>
+
+  <script>
+    const API = "http://localhost:8080";
+
+
+    setInterval(() => {
+      document.getElementById("hora").innerText =
+        new Date().toLocaleTimeString();
+    }, 1000);
+
+
+    const ctx = document.getElementById("grafico").getContext("2d");
+
+    let labels = [];
+    let dados = [];
+
+    const chart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{
+          data: dados,
+          borderWidth: 2,
+          tension: 0.3
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+
+
+    async function atualizar() {
+      try {
+        const res = await fetch(API + "/status");
+        const data = await res.json();
+
+
+        const pessoasEl = document.getElementById("pessoas");
+        const limiteEl = document.getElementById("limite");
+        const statusEl = document.getElementById("status");
+
+        pessoasEl.innerText = data.pessoas ?? 0;
+        limiteEl.innerText = data.limite ?? 0;
+        statusEl.innerText = data.status ?? "-";
+
+
+        if (data.permitido === true) {
+          statusEl.style.color = "green";
+        } else {
+          statusEl.style.color = "red";
+        }
+
+
+        let limite = data.limite || 1;
+        let pct = (data.pessoas / limite) * 100;
+
+        const barra = document.getElementById("barra");
+        barra.style.width = pct + "%";
+
+        if (pct < 70) barra.style.background = "#22c55e";
+        else if (pct < 100) barra.style.background = "#f59e0b";
+        else barra.style.background = "#ef4444";
+
+
+        labels.push(new Date().toLocaleTimeString());
+        dados.push(data.pessoas);
+
+        if (labels.length > 15) {
+          labels.shift();
+          dados.shift();
+        }
+
+        chart.update();
+
+      } catch (e) {
+        console.log("Erro ao conectar com API");
+      }
+    }
+
+
+    async function alterarLimite() {
+      const valor = document.getElementById("novoLimite").value;
+
+      if (!valor || valor <= 0) {
+        alert("Digite um limite válido");
+        return;
+      }
+
+      await fetch(API + "/config/limite?valor=" + valor, { method: "POST" });
+      atualizar();
+    }
+
+    async function resetar() {
+      await fetch(API + "/reset", { method: "POST" });
+      atualizar();
+    }
+
+
+    setInterval(atualizar, 1500);
+    atualizar();
+  </script>
